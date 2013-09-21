@@ -7,24 +7,23 @@
 	 Compiler:    MDK-ARM
 	 Author/Date: Franz Haunstetter / 16.09.13
 	 Comment:     new
+	 Author/Date: Franz Haunstetter / 21.09.13
+	 Comment:     added support for buffer
    *********************************************
 */
 
 /* includes */
 #include <lm3s9d96.h>		// hardware register names
+#include <labex.h>
 
 /* private macros */
-#define BIT(n)		(1 << n)
-#define SYSCLK    80000000
-
-#define BDR       9600
 #define DIVINT    SYSCLK / (16*BDR)
 #define DIVFRAC   (((SYSCLK / (16.0*BDR)) - DIVINT)*64+0.5)
 
 #define IPRIO			1
 
 /* global buffers */
-extern char c;
+extern char c[], r_c, w_c;
 
 //
 // Initialize UART1 Rx/Tx on PD2/PD3 out of reset:
@@ -72,6 +71,9 @@ int send_rs232( char c )
 	if (UART1_FR_R & UART_FR_TXFE)
 	{
 		UART1_DR_R = (unsigned int) c;
+		r_c++;
+		if (r_c == w_c)
+			r_c = w_c = 0;
 		return 1;
 	}
 	return 0;
@@ -83,5 +85,9 @@ int send_rs232( char c )
 //
 void RxISR()
 {
-		c = UART1_DR_R;
+	if (r_c == w_c)
+		r_c = w_c = 0;
+	
+	if (w_c < TXTBUFL)
+		c[w_c++] = UART1_DR_R;
 }

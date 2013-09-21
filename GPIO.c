@@ -12,10 +12,9 @@
 
 /* includes */
 #include <lm3s9d96.h>		// hardware register names
+#include <labex.h>
 
 /* private macros */
-#define BIT(n)		(1 << n)
-#define SYSCLK    80000000
 
 //
 // Initialize GPIO out of reset:

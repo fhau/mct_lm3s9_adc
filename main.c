@@ -11,15 +11,16 @@
 	 Comment:     User button polling
 	 Author/Date: Franz Haunstetter / 16.09.13
 	 Comment:     RS232 serial in- and output
+	 Author/Date: Franz Haunstetter / 21.09.13
+	 Comment:     analog input
    *********************************************
 */
 
 /* includes */
 #include <lm3s9d96.h>		// hardware register names
+#include <labex.h>
 
 /* private macros */
-#define BIT(n)		(1 << n)
-#define SYSCLK    80000000
 
 /* private function prototypes */
 void init(void);						// initialize.c
@@ -27,12 +28,13 @@ void init_sys(void);				// system.c
 void SysTickRun(void);
 void SysTickISR(void);
 void init_rs232(void);			// rs232.c
-int send_rs232( char c );
-int rec_rs232( char* buf );
 void init_IO(void);					// GPIO.c
+int init_ADC(void);					// ADC.c
 
 /* global buffers */
-char c;
+char c[TXTBUFL];						// single line
+int r_c = 0;								// read index
+int w_c = 0;								// write index
 
 int main()
 {
@@ -44,6 +46,7 @@ int main()
 	init_sys();
 	init_rs232();
 	init_IO();
+	init_ADC();
 	
 	//
 	// Run the timer at once with interrupts.
@@ -55,16 +58,6 @@ int main()
 	//
 	for(;;)
 	{
-		//
-		// Wait for character from remote and
-		// echo with shift to console
-		//
-		if (c > 0)
-		{
-			while (!send_rs232(c>='A' && c<='Z'? c+32: c));
-			c = 0;
-		}
-		
 		//
 		// Reflect the button's state on second LED with every change.
 		//
